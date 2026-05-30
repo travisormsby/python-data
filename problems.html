@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executable Parsons Problem</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.29.4/full/pyodide.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Executable Parsons Problem</h2>
+        <p>Drag the lines below to reorder them. You can run the current arrangement at any time.</p>
+
+        <div id="status" class="status">Loading Python environment...</div>
+        <label for="script-select" style="font-weight: bold; margin-right: 8px;">Select Problem:</label>
+        <select id="script-select" onchange="loadSelectedScript()">
+        </select>
+
+        <div class="code-editor-container">
+            <ol id="sortable-list"></ol>
+        </div>
+
+        <button id="run-btn" disabled onclick="runCode()">Run</button>
+        <button id="check-btn" onclick="checkSolution()">Check order</button>
+        <button id="reveal-btn" onclick="revealSolution()">See Answer</button>
+        <button id="copy-btn" onclick="copyCodeToClipboard()">Copy to clipboard</button>
+        <button id="export-btn" onclick="exportToPyFile()">Export as .py file</button>
+        <h3>Output:</h3>
+        <div id="output-box">Initializing...</div>
+    </div>
+    <script src="parson.js"></script>
+</body>
+
+</html>

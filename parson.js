@@ -1,0 +1,275 @@
+const AVAILABLE_SCRIPTS = [
+    { name: "hello_world", label: "1. Hello World (Pydantic)" },
+    { name: "calculator", label: "2. Simple Calculator" },
+    { name: "data_filter", label: "3. Data Filtering" }
+];
+const DEFAULT_SCRIPT = 'hello_world'
+
+let pyodide;
+let currentFileName;
+let originalUnscrambledCode;
+const listContainer = document.getElementById('sortable-list');
+const outputBox = document.getElementById('output-box');
+const runBtn = document.getElementById('run-btn');
+const revealBtn = document.getElementById('reveal-btn');
+const statusDiv = document.getElementById('status');
+const scriptSelect = document.getElementById('script-select');
+
+function populateDropdown(selectedFile) {
+    scriptSelect.innerHTML = ""; // Clear any placeholders
+
+    AVAILABLE_SCRIPTS.forEach(script => {
+        const opt = document.createElement('option');
+        opt.value = script.name;
+        opt.textContent = script.label;
+        scriptSelect.appendChild(opt);
+    });
+
+    // Lock the dropdown index onto our target script
+    scriptSelect.value = selectedFile;
+}
+
+async function initPyodide() {
+    try {
+        statusDiv.textContent = "Downloading Python WebAssembly core...";
+        pyodide = await loadPyodide();
+
+        statusDiv.textContent = "Loading Pydantic library...";
+        await pyodide.loadPackage("pydantic");
+
+        statusDiv.textContent = "Python environment ready! Fetching script...";
+
+        // Determine what file we should ultimately load based on URL or defaults
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetScript = urlParams.get('problem') || DEFAULT_SCRIPT;
+
+        // Execute the script fetch sequence while the dropdown is still hidden/blank
+        await loadSelectedScript(targetScript);
+
+        // POPULATE DROPDOWN ONLY NOW after successful script processing
+        populateDropdown(targetScript);
+
+        statusDiv.textContent = "Python environment and problem loaded!";
+        runBtn.disabled = false;
+    } catch (err) {
+        statusDiv.textContent = "Failed to load Python.";
+        outputBox.textContent = `Initialization Error:\n${err.message || err}`;
+        console.error(err);
+    }
+}
+
+initPyodide();
+
+async function loadSelectedScript() {
+    // 1. CRITICAL FIX: Check the dropdown menu first. 
+    // If it's blank or uninitialized, fall back to the URL parameter, then the default file.
+    const urlParams = new URLSearchParams(window.location.search);
+    const scriptName = scriptSelect.value || urlParams.get('problem') || 'hello_world';
+
+    // 2. Keep the dropdown box visually synced with the file we are loading
+    scriptSelect.value = scriptName;
+
+    // Update our export file name reference based on the selected file path
+    currentFileName = scriptName;
+
+    // Clear out old scrambled elements from the list container
+    listContainer.innerHTML = "";
+    outputBox.textContent = "Loading new script data...";
+
+    // Update query parameters to match new script
+    const url = new URL(window.location);
+    url.searchParams.set('problem', scriptName);
+    window.history.pushState({}, '', url); // Updates the URL text without reloading the page
+
+    try {
+        // Use browser Fetch API to pull down the raw text from the external file
+        revealBtn.textContent = "See Answer";
+
+        // This cleanly maps your clean filenames back to your subfolder!
+        const fetchPath = `scripts/${scriptName}.py`;
+        const response = await fetch(fetchPath);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const rawCode = await response.text();
+        originalUnscrambledCode = rawCode;
+
+        // Process, scramble, and generate elements from file text
+        setupProblem(rawCode.trim());
+        outputBox.textContent = "Problem loaded. Drag lines to arrange.";
+    } catch (err) {
+        outputBox.textContent = `Error loading external file:\n${err.message}\n\nNote: Browsers block local file access (file://). Make sure you are running a local web server (e.g., Live Server or python -m http.server).`;
+    }
+}
+
+
+function setupProblem(codeText) {
+    const lines = codeText.split('\n');
+
+    // Fisher-Yates Scramble Algorithm
+    const scrambled = [...lines];
+    for (let i = scrambled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [scrambled[i], scrambled[j]] = [scrambled[j], scrambled[i]];
+    }
+
+    // Render scrambled code blocks
+    scrambled.forEach(lineText => {
+        const li = document.createElement('li');
+        li.className = 'draggable-line';
+        li.draggable = true;
+
+        const codeSpan = document.createElement('span');
+        codeSpan.className = 'code-block';
+        codeSpan.textContent = lineText;
+
+        li.appendChild(codeSpan);
+        listContainer.appendChild(li);
+    });
+}
+
+// Toggle CSS properties for dragging elements
+listContainer.addEventListener('dragstart', (e) => {
+    if (e.target.classList.contains('draggable-line')) {
+        e.target.classList.add('dragging');
+    }
+});
+
+listContainer.addEventListener('dragend', (e) => {
+    if (e.target.classList.contains('draggable-line')) {
+        e.target.classList.remove('dragging');
+    }
+});
+
+// Place dragged element
+listContainer.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const draggingItem = document.querySelector('.dragging');
+    const siblings = [...listContainer.querySelectorAll('.draggable-line:not(.dragging)')];
+
+    const nextSibling = siblings.find(sibling => {
+        const box = sibling.getBoundingClientRect();
+        return e.clientY <= box.top + box.height / 2;
+    });
+
+    listContainer.insertBefore(draggingItem, nextSibling);
+});
+
+function getCompiledCode() {
+    const currentLines = [...listContainer.querySelectorAll('.code-block')]
+        .map(span => span.textContent);
+    return currentLines.join('\n');
+}
+
+function normalizeCodeForComparison(codeStr) {
+    return codeStr
+        .split('\n')
+        .map(line => line.trimEnd())             // Ignore accidental trailing spaces
+        .filter(line => line.trim() !== "")      // Completely ignore blank lines
+        .join('\n');
+}
+
+async function runCode() {
+    if (!pyodide) return;
+
+    runBtn.disabled = true;
+    outputBox.textContent = "";
+    revealBtn.textContent = "See Answer"
+
+    const codeToRun = getCompiledCode();
+
+    let consoleBuffer = "";
+
+    // Write pyodide output to consoleBuffer
+    pyodide.setStdout({
+        batched: (text) => { consoleBuffer += text + "\n"; }
+    });
+    pyodide.setStderr({
+        batched: (text) => { consoleBuffer += text + "\n"; }
+    });
+
+    try {
+        await pyodide.runPythonAsync(codeToRun);
+
+        if (consoleBuffer.trim() === "") {
+            outputBox.textContent = "Code executed successfully with no visual output.";
+        } else {
+            outputBox.textContent = consoleBuffer;
+        }
+    } catch (err) {
+        outputBox.textContent = consoleBuffer + err.message;
+    } finally {
+        runBtn.disabled = false;
+    }
+}
+
+
+function checkSolution() {
+    if (!originalUnscrambledCode) return;
+    revealBtn.textContent = "See Answer"
+
+    // 1. Extract and normalize the user's current configuration
+    const currentUserCode = getCompiledCode();
+    const normalizedUser = normalizeCodeForComparison(currentUserCode);
+
+    // 2. Normalize the master script reference
+    const normalizedOriginal = normalizeCodeForComparison(originalUnscrambledCode);
+
+    // 3. Compare the semantic structure
+    if (normalizedUser === normalizedOriginal) {
+        outputBox.textContent = "🎉 Success! The lines are ordered correctly.";
+    } else {
+        outputBox.textContent = "❌ Not quite right yet. Keep rearranging the blocks!";
+    }
+}
+
+function revealSolution() {
+
+    if (!originalUnscrambledCode) return;
+
+    // Check if we are already displaying the answer by inspecting the button text
+    if (revealBtn.textContent === "See Answer") {
+        // 1. Save any current output text if you want to prevent completely losing errors (optional)
+        outputBox.textContent = `--- CORRECT SOLUTION REFERENCE ---\n\n${originalUnscrambledCode}`;
+        revealBtn.textContent = "Hide Answer";
+    } else {
+        // 2. Clear out the answer code block and return to normal status
+        outputBox.textContent = "Ready to run.";
+        revealBtn.textContent = "See Answer";
+    }
+}
+
+async function copyCodeToClipboard() {
+    const copyBtn = document.getElementById('copy-btn');
+    const codeToCopy = getCompiledCode();
+
+    try {
+        await navigator.clipboard.writeText(codeToCopy);
+
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = "Copied!";
+        copyBtn.style.backgroundColor = "#2b8a3e";
+
+        setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.style.backgroundColor = "";
+        }, 2000);
+
+    } catch (err) {
+        outputBox.textContent = `Failed to copy code to clipboard:\n${err.message}`;
+    }
+}
+
+function exportToPyFile() {
+    const codeToExport = getCompiledCode();
+
+    const blob = new Blob([codeToExport], { type: 'text/plain;charset=utf-8' });
+    const tempLink = document.createElement('a');
+    tempLink.href = URL.createObjectURL(blob);
+    tempLink.download = `solved_${currentFileName}`; // Outputs file name e.g., "solved_calculator.py"
+
+    document.body.appendChild(tempLink);
+    tempLink.click();
+    document.body.removeChild(tempLink);
+    URL.revokeObjectURL(tempLink.href);
+}
