@@ -120,7 +120,7 @@ async function loadSelectedScript() {
 
     try {
         // Use browser Fetch API to pull down the raw text from the external file
-        revealBtn.textContent = "See Answer";
+        revealBtn.textContent = "See answer";
 
         // This cleanly maps your clean filenames back to your subfolder!
         const fetchPath = `scripts/${scriptName}.py`;
@@ -212,7 +212,7 @@ async function runCode() {
 
     runBtn.disabled = true;
     outputBox.textContent = "";
-    revealBtn.textContent = "See Answer"
+    revealBtn.textContent = "See answer"
 
     const codeToRun = getCompiledCode();
 
@@ -244,7 +244,7 @@ async function runCode() {
 
 function checkSolution() {
     if (!originalUnscrambledCode) return;
-    revealBtn.textContent = "See Answer"
+    revealBtn.textContent = "See answer"
 
     // 1. Extract and normalize the user's current configuration
     const currentUserCode = getCompiledCode();
@@ -266,14 +266,14 @@ function revealSolution() {
     if (!originalUnscrambledCode) return;
 
     // Check if we are already displaying the answer by inspecting the button text
-    if (revealBtn.textContent === "See Answer") {
+    if (revealBtn.textContent === "See answer") {
         // 1. Save any current output text if you want to prevent completely losing errors (optional)
         outputBox.textContent = `--- CORRECT SOLUTION REFERENCE ---\n\n${originalUnscrambledCode}`;
-        revealBtn.textContent = "Hide Answer";
+        revealBtn.textContent = "Hide answer";
     } else {
         // 2. Clear out the answer code block and return to normal status
         outputBox.textContent = "Ready to run.";
-        revealBtn.textContent = "See Answer";
+        revealBtn.textContent = "See answer";
     }
 }
 
