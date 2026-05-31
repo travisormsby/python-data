@@ -6,6 +6,11 @@ body {
     background-color: #f9f9f9;
 }
 
+label {
+    font-weight: bold;
+    margin-right: 8px;
+}
+
 .container {
     background: white;
     padding: 25px;
@@ -66,7 +71,7 @@ body {
     flex-grow: 1;
     background: #f1f3f5;
     border: 1px solid #dee2e6;
-    padding: 8px 12px;
+    padding: 4px 12px;
     font-family: "Courier New", Courier, monospace;
     white-space: pre;
     overflow-x: auto;
@@ -97,6 +102,7 @@ button {
     background-color: #228be6;
     color: white;
     border: none;
+    margin: 2px 0px;
     padding: 10px 20px;
     font-size: 16px;
     border-radius: 4px;

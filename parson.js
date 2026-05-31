@@ -1,6 +1,8 @@
+const DEBUG = true
 const AVAILABLE_SCRIPTS = [
     { name: "hello_world", label: "1. Hello World (Pydantic)" },
-    { name: "calculator", label: "2. Simple Calculator" },
+    { name: "pydantic_from_csv", label: "Create Pydantic models from CSV" },
+    { name: "pydantic_from_csv_bulk", label: "Create Pydantic models in bulk from CSV" },
     { name: "data_filter", label: "3. Data Filtering" }
 ];
 const DEFAULT_SCRIPT = 'hello_world'
@@ -29,27 +31,62 @@ function populateDropdown(selectedFile) {
     scriptSelect.value = selectedFile;
 }
 
+// Register service worker to enable caching of the duckdb wheel and assets
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(reg => { console.log('Service worker registered:', reg); })
+            .catch(err => { console.warn('Service worker registration failed:', err); });
+    });
+}
+
 async function initPyodide() {
     try {
-        statusDiv.textContent = "Downloading Python WebAssembly core...";
-        pyodide = await loadPyodide();
 
-        statusDiv.textContent = "Loading Pydantic library...";
-        await pyodide.loadPackage("pydantic");
-
-        statusDiv.textContent = "Python environment ready! Fetching script...";
+        runBtn.disabled = true;
 
         // Determine what file we should ultimately load based on URL or defaults
         const urlParams = new URLSearchParams(window.location.search);
         const targetScript = urlParams.get('problem') || DEFAULT_SCRIPT;
-
-        // Execute the script fetch sequence while the dropdown is still hidden/blank
-        await loadSelectedScript(targetScript);
-
-        // POPULATE DROPDOWN ONLY NOW after successful script processing
+        const scriptPromise = loadSelectedScript(targetScript);
         populateDropdown(targetScript);
 
-        statusDiv.textContent = "Python environment and problem loaded!";
+        statusDiv.textContent = "Downloading Python WebAssembly core...";
+        pyodide = await loadPyodide();
+
+        statusDiv.textContent = "Loading libraries...";
+        await pyodide.loadPackage("micropip");
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install("pydantic")
+            await micropip.install("public/assets/wheels/duckdb-1.5.0-cp313-cp313-pyodide_2025_0_wasm32.whl")
+        `);
+
+        statusDiv.textContent = "Python environment ready! Fetching problem...";
+
+        // POPULATE DROPDOWN ONLY NOW after successful script processing
+
+
+        statusDiv.textContent = "Problem loaded! Loading data...";
+
+        const resp = await fetch('data.zip');
+        if (!resp.ok) {
+            throw new Error(`Failed to load data.zip: ${resp.status}`);
+        }
+
+        const bytes = new Uint8Array(await resp.arrayBuffer());
+        pyodide.FS.writeFile('/data.zip', bytes);
+
+        await pyodide.runPythonAsync(`
+        import zipfile
+        with zipfile.ZipFile('/data.zip') as z:
+            z.extractall('/')
+        `);
+        pyodide.FS.unlink('/data.zip');  // optional cleanup
+        pyodide.FS.chdir('/');
+
+        statusDiv.textContent = "Ready!";
+
         runBtn.disabled = false;
     } catch (err) {
         statusDiv.textContent = "Failed to load Python.";
@@ -64,7 +101,7 @@ async function loadSelectedScript() {
     // 1. CRITICAL FIX: Check the dropdown menu first. 
     // If it's blank or uninitialized, fall back to the URL parameter, then the default file.
     const urlParams = new URLSearchParams(window.location.search);
-    const scriptName = scriptSelect.value || urlParams.get('problem') || 'hello_world';
+    const scriptName = scriptSelect.value || urlParams.get('problem') || DEFAULT_SCRIPT;
 
     // 2. Keep the dropdown box visually synced with the file we are loading
     scriptSelect.value = scriptName;
@@ -105,12 +142,13 @@ async function loadSelectedScript() {
 
 function setupProblem(codeText) {
     const lines = codeText.split('\n');
-
-    // Fisher-Yates Scramble Algorithm
     const scrambled = [...lines];
-    for (let i = scrambled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [scrambled[i], scrambled[j]] = [scrambled[j], scrambled[i]];
+    if (!DEBUG) {
+        // Fisher-Yates Scramble Algorithm
+        for (let i = scrambled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [scrambled[i], scrambled[j]] = [scrambled[j], scrambled[i]];
+        }
     }
 
     // Render scrambled code blocks
@@ -266,7 +304,7 @@ function exportToPyFile() {
     const blob = new Blob([codeToExport], { type: 'text/plain;charset=utf-8' });
     const tempLink = document.createElement('a');
     tempLink.href = URL.createObjectURL(blob);
-    tempLink.download = `solved_${currentFileName}`; // Outputs file name e.g., "solved_calculator.py"
+    tempLink.download = `solved_${currentFileName}.py`; // Outputs file name e.g., "solved_calculator.py"
 
     document.body.appendChild(tempLink);
     tempLink.click();
