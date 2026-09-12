@@ -1,0 +1,16 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+*.egg-info
+.mypy_cache/
+
+# Virtual environments
+.venv
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# VS Code configuration
+.vscode
