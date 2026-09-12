@@ -3,7 +3,7 @@ These are the materials for the "Python Data Therapy" workshop taught at the MN 
 The repository consists of two distinct parts:
 
 - A Jupyter notebook, data, and supporting configuration files to build a local Python environment for running the notebook.
-- The source code for a web app of [Parsons problems](https://en.wikipedia.org/wiki/Parsons_problem) related to the concepts discussed in the Jupyter notebook.
+- The source code for a web app of [Parsons problems](https://en.wikipedia.org/wiki/Parsons_problem) related to the concepts discussed in the Jupyter notebook. A live version of the app built from this code is available at https://projects.travisormsby.com/python-data
 
 To get started:
 
