@@ -1,11 +1,14 @@
-const DEBUG = true
+const DEBUG = false // Script is not scrambled if true
 const AVAILABLE_SCRIPTS = [
-    { name: "hello_world", label: "1. Hello World (Pydantic)" },
-    { name: "pydantic_from_csv", label: "Create Pydantic models from CSV" },
-    { name: "pydantic_from_csv_bulk", label: "Create Pydantic models in bulk from CSV" },
-    { name: "data_filter", label: "3. Data Filtering" }
+    { name: "pydantic_from_csv_loop", label: "1. Create Pydantic models from CSV in a loop" },
+    { name: "pydantic_from_csv_bulk", label: "2. Create Pydantic models from CSV all at once" },
+    { name: "polars_total_pop", label: "3. Use Polars to filter and aggregate data" },
+    { name: "polars_region_area", label: "4. Use Polars to aggregate data by group" },
+    { name: "polars_pop_density", label: "5. Use Polars to calculate and sort a field " },
+    { name: "duckdb_relational_api", label: "6. Use DuckDB's relational API to query data" },
+    { name: "duckdb_sql_api", label: "7. Use DuckDB's SQL API to query data" },
 ];
-const DEFAULT_SCRIPT = 'hello_world'
+const DEFAULT_SCRIPT = 'pydantic_from_csv_loop'
 
 let pyodide;
 let currentFileName;
@@ -42,7 +45,6 @@ if ('serviceWorker' in navigator) {
 
 async function initPyodide() {
     try {
-
         runBtn.disabled = true;
 
         // Determine what file we should ultimately load based on URL or defaults
@@ -59,14 +61,13 @@ async function initPyodide() {
         await pyodide.runPythonAsync(`
             import micropip
             await micropip.install("pydantic")
-            await micropip.install("public/assets/wheels/duckdb-1.5.0-cp313-cp313-pyodide_2025_0_wasm32.whl")
+            await micropip.install("wheels/duckdb-1.5.0-cp313-cp313-pyodide_2025_0_wasm32.whl")
+            await micropip.install("wheels/polars-1.33.1-cp313-cp313-pyodide_2025_0_wasm32.whl")
         `);
 
         statusDiv.textContent = "Python environment ready! Fetching problem...";
 
-        // POPULATE DROPDOWN ONLY NOW after successful script processing
-
-
+        // Populate dropdown only after successful script processing
         statusDiv.textContent = "Problem loaded! Loading data...";
 
         const resp = await fetch('data.zip');
@@ -98,12 +99,12 @@ async function initPyodide() {
 initPyodide();
 
 async function loadSelectedScript() {
-    // 1. CRITICAL FIX: Check the dropdown menu first. 
+    // Check the dropdown menu first. 
     // If it's blank or uninitialized, fall back to the URL parameter, then the default file.
     const urlParams = new URLSearchParams(window.location.search);
     const scriptName = scriptSelect.value || urlParams.get('problem') || DEFAULT_SCRIPT;
 
-    // 2. Keep the dropdown box visually synced with the file we are loading
+    // Keep the dropdown box visually synced with the file we are loading
     scriptSelect.value = scriptName;
 
     // Update our export file name reference based on the selected file path
@@ -122,7 +123,7 @@ async function loadSelectedScript() {
         // Use browser Fetch API to pull down the raw text from the external file
         revealBtn.textContent = "See answer";
 
-        // This cleanly maps your clean filenames back to your subfolder!
+        // This cleanly maps clean filenames back to the right subfolder
         const fetchPath = `scripts/${scriptName}.py`;
         const response = await fetch(fetchPath);
         if (!response.ok) {
@@ -135,7 +136,7 @@ async function loadSelectedScript() {
         setupProblem(rawCode.trim());
         outputBox.textContent = "Problem loaded. Drag lines to arrange.";
     } catch (err) {
-        outputBox.textContent = `Error loading external file:\n${err.message}\n\nNote: Browsers block local file access (file://). Make sure you are running a local web server (e.g., Live Server or python -m http.server).`;
+        outputBox.textContent = `${err.message}\n${scriptName} not found `;
     }
 }
 
@@ -257,7 +258,7 @@ function checkSolution() {
     if (normalizedUser === normalizedOriginal) {
         outputBox.textContent = "🎉 Success! The lines are ordered correctly.";
     } else {
-        outputBox.textContent = "❌ Not quite right yet. Keep rearranging the blocks!";
+        outputBox.textContent = "❌ That doesn't match the order in the answer key. It might still be OK, but double check to be sure";
     }
 }
 

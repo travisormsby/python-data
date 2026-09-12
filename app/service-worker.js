@@ -1,12 +1,13 @@
-const CACHE_NAME = 'python-data-cache-2026-05-31'; // update after changing assets
+const CACHE_NAME = 'python-data-cache-2026-09-12'; // update after changing assets
 
 // Uncomment Assets when development complete to actually cache them on install.
 const ASSETS_TO_CACHE = [
-    // '/problems.html',
-    // '/parson.js',
-    // '/style.css',
-    // '/data.zip',
-    '/public/assets/wheels/duckdb-1.5.0-cp313-cp313-pyodide_2025_0_wasm32.whl',
+    '/index.html',
+    '/index.js',
+    '/style.css',
+    '/data.zip',
+    '/wheels/duckdb-1.5.0-cp313-cp313-pyodide_2025_0_wasm32.whl',
+    '/wheels/polars-1.33.1-cp313-cp313-pyodide_2025_0_wasm32.whl',
     'https://cdn.jsdelivr.net/pyodide/v0.29.4/full/micropip-0.11.1-py3-none-any.whl',
     'https://cdn.jsdelivr.net/pyodide/v0.29.4/full/pydantic-2.12.5-py3-none-any.whl',
     'https://cdn.jsdelivr.net/pyodide/v0.29.4/full/typing_extensions-4.15.0-py3-none-any.whl',
@@ -18,10 +19,6 @@ const ASSETS_TO_CACHE = [
     'https://cdn.jsdelivr.net/pyodide/v0.29.4/full/pyodide-lock.json',
     'https://cdn.jsdelivr.net/pyodide/v0.29.4/full/python_stdlib.zip',
     'https://cdn.jsdelivr.net/pyodide/v0.29.4/full/pyodide.asm.wasm'
-
-
-
-
 ];
 
 self.addEventListener('install', (event) => {
@@ -69,16 +66,16 @@ self.addEventListener('fetch', (event) => {
             console.log('[SW] cache MISS for', event.request.url, '- fetching');
             return fetch(event.request).then((response) => {
                 // Cache all successful responses (including opaque ones) -- aggressive, turn on only when dev complete
-                // if (response && (response.status === 200 || response.type === 'opaque')) {
-                //     const respClone = response.clone();
-                //     caches.open(CACHE_NAME).then((cache) => {
-                //         cache.put(event.request, respClone).then(() => {
-                //             console.log('[SW] cached response for', event.request.url);
-                //         }).catch((err) => {
-                //             console.warn('[SW] cache.put failed for', event.request.url, err);
-                //         });
-                //     });
-                // }
+                if (response && (response.status === 200 || response.type === 'opaque')) {
+                    const respClone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, respClone).then(() => {
+                            console.log('[SW] cached response for', event.request.url);
+                        }).catch((err) => {
+                            console.warn('[SW] cache.put failed for', event.request.url, err);
+                        });
+                    });
+                }
                 return response;
             }).catch((err) => {
                 console.warn('[SW] fetch failed, falling back to cache:', err);
