@@ -1,4 +1,4 @@
-const DEBUG = true // Script is not scrambled if true
+const DEBUG = false // Script is not scrambled if true
 const AVAILABLE_SCRIPTS = [
     { name: "pydantic_type_coercion", label: "1. Coerce types when instantiating Pydantic models" },
     { name: "pydantic_from_csv", label: "2. Instantiate Pydantic models from a csv" },
