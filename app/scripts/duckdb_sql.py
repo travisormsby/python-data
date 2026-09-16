@@ -2,11 +2,10 @@ import duckdb
 
 with duckdb.connect() as con:
     rel = con.sql("""
-        SELECT region, COUNT(name) AS num_counties_over_100k_pop 
+        SELECT name, population, region
         FROM 'data/mn_counties/**/*.parquet'
         WHERE population > 100000
-        GROUP BY region
-        ORDER BY num_counties_over_100k_pop DESC
+        ORDER BY population DESC
     """)
 
     rel.show()

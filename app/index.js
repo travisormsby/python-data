@@ -5,8 +5,9 @@ const AVAILABLE_SCRIPTS = [
     { name: "polars_total_pop", label: "3. Use Polars to filter and aggregate data" },
     { name: "polars_region_area", label: "4. Use Polars to aggregate data by group" },
     { name: "polars_pop_density", label: "5. Use Polars to calculate and sort a field " },
-    { name: "duckdb_relational_api", label: "6. Use DuckDB's relational API to query data" },
-    { name: "duckdb_sql_api", label: "7. Use DuckDB's SQL API to query data" },
+    { name: "duckdb_method_chaining", label: "6. Use method chaining with a DuckDB relation" },
+    { name: "duckdb_sql", label: "7. Use SQL queries with a DuckDB relation" },
+    { name: "duckdb_parameterized", label: "8: Use parameterized queries in DuckDB" }
 ];
 const DEFAULT_SCRIPT = 'pydantic_type_coercion'
 
@@ -61,6 +62,7 @@ async function initPyodide() {
         await pyodide.runPythonAsync(`
             import micropip
             await micropip.install("pydantic")
+            await micropip.install("pyarrow")
             await micropip.install("wheels/duckdb-1.5.0-cp313-cp313-pyodide_2025_0_wasm32.whl")
             await micropip.install("wheels/polars-1.33.1-cp313-cp313-pyodide_2025_0_wasm32.whl")
         `);
