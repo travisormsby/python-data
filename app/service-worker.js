@@ -1,10 +1,10 @@
-const CACHE_NAME = 'python-data-cache-2026-09-12'; // update after changing assets
+const CACHE_NAME = 'python-data-cache-2026-09-15'; // update after changing assets
 
 // Uncomment Assets when development complete to actually cache them on install.
 const ASSETS_TO_CACHE = [
-    '/index.html',
-    '/index.js',
-    '/style.css',
+    // '/index.html',
+    // '/index.js',
+    // '/style.css',
     '/data.zip',
     '/wheels/duckdb-1.5.0-cp313-cp313-pyodide_2025_0_wasm32.whl',
     '/wheels/polars-1.33.1-cp313-cp313-pyodide_2025_0_wasm32.whl',
