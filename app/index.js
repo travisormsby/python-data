@@ -1,14 +1,14 @@
-const DEBUG = false // Script is not scrambled if true
+const DEBUG = true // Script is not scrambled if true
 const AVAILABLE_SCRIPTS = [
-    { name: "pydantic_from_csv_loop", label: "1. Create Pydantic models from CSV in a loop" },
-    { name: "pydantic_from_csv_bulk", label: "2. Create Pydantic models from CSV all at once" },
+    { name: "pydantic_type_coercion", label: "1. Coerce types when instantiating Pydantic models" },
+    { name: "pydantic_from_csv", label: "2. Instantiate Pydantic models from a csv" },
     { name: "polars_total_pop", label: "3. Use Polars to filter and aggregate data" },
     { name: "polars_region_area", label: "4. Use Polars to aggregate data by group" },
     { name: "polars_pop_density", label: "5. Use Polars to calculate and sort a field " },
     { name: "duckdb_relational_api", label: "6. Use DuckDB's relational API to query data" },
     { name: "duckdb_sql_api", label: "7. Use DuckDB's SQL API to query data" },
 ];
-const DEFAULT_SCRIPT = 'pydantic_from_csv_loop'
+const DEFAULT_SCRIPT = 'pydantic_type_coercion'
 
 let pyodide;
 let currentFileName;
