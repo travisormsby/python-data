@@ -1,4 +1,4 @@
-const CACHE_NAME = 'python-data-cache-2026-09-16b'; // update after changing assets
+const CACHE_NAME = 'python-data-cache-2026-09-20a'; // update after changing assets
 
 // Uncomment Assets when development complete to actually cache them on install.
 const ASSETS_TO_CACHE = [

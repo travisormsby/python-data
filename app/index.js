@@ -1,4 +1,4 @@
-const DEBUG = false // Script is not scrambled if true
+const DEBUG = false // Script is not scrambled and assets not cached if true
 const AVAILABLE_SCRIPTS = [
     { name: "pydantic_type_coercion", label: "1. Coerce types when instantiating Pydantic models" },
     { name: "pydantic_from_csv", label: "2. Instantiate Pydantic models from a csv" },
@@ -17,6 +17,7 @@ let originalUnscrambledCode;
 const listContainer = document.getElementById('sortable-list');
 const outputBox = document.getElementById('output-box');
 const runBtn = document.getElementById('run-btn');
+const outputBtn = document.getElementById('output-btn')
 const revealBtn = document.getElementById('reveal-btn');
 const statusDiv = document.getElementById('status');
 const scriptSelect = document.getElementById('script-select');
@@ -35,18 +36,20 @@ function populateDropdown(selectedFile) {
     scriptSelect.value = selectedFile;
 }
 
-// Register service worker to enable caching of the duckdb wheel and assets
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js')
-            .then(reg => { console.log('Service worker registered:', reg); })
-            .catch(err => { console.warn('Service worker registration failed:', err); });
-    });
+// Register service worker to enable caching of assets
+if (!DEBUG) {
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./service-worker.js')
+                .then(reg => { console.log('Service worker registered:', reg); })
+                .catch(err => { console.warn('Service worker registration failed:', err); });
+        });
+    }
 }
-
 async function initPyodide() {
     try {
         runBtn.disabled = true;
+        outputBtn.disabled = true
 
         // Determine what file we should ultimately load based on URL or defaults
         const urlParams = new URLSearchParams(window.location.search);
@@ -91,6 +94,7 @@ async function initPyodide() {
         statusDiv.textContent = "Ready!";
 
         runBtn.disabled = false;
+        outputBtn.disabled = false;
     } catch (err) {
         statusDiv.textContent = "Failed to load Python.";
         outputBox.textContent = `Initialization Error:\n${err.message || err}`;
@@ -124,8 +128,9 @@ async function loadSelectedScript() {
     try {
         // Use browser Fetch API to pull down the raw text from the external file
         revealBtn.textContent = "See answer";
+        outputBtn.textContent = "See expected output";
 
-        // This cleanly maps clean filenames back to the right subfolder
+        // Map clean filenames back to the right subfolder
         const fetchPath = `scripts/${scriptName}.py`;
         const response = await fetch(fetchPath);
         if (!response.ok) {
@@ -137,11 +142,13 @@ async function loadSelectedScript() {
         // Process, scramble, and generate elements from file text
         setupProblem(rawCode.trim());
         outputBox.textContent = "Problem loaded. Drag lines to arrange.";
+
+
+
     } catch (err) {
         outputBox.textContent = `${err.message}\n${scriptName} not found `;
     }
 }
-
 
 function setupProblem(codeText) {
     const lines = codeText.split('\n');
@@ -210,14 +217,11 @@ function normalizeCodeForComparison(codeStr) {
         .join('\n');
 }
 
-async function runCode() {
-    if (!pyodide) return;
+async function getOutput(codeText) {
 
     runBtn.disabled = true;
-    outputBox.textContent = "";
-    revealBtn.textContent = "See answer"
+    outputBtn.disabled = true;
 
-    const codeToRun = getCompiledCode();
 
     let consoleBuffer = "";
 
@@ -228,40 +232,48 @@ async function runCode() {
     pyodide.setStderr({
         batched: (text) => { consoleBuffer += text + "\n"; }
     });
-
     try {
-        await pyodide.runPythonAsync(codeToRun);
-
-        if (consoleBuffer.trim() === "") {
-            outputBox.textContent = "Code executed successfully with no visual output.";
-        } else {
-            outputBox.textContent = consoleBuffer;
-        }
+        await pyodide.runPythonAsync(codeText)
     } catch (err) {
-        outputBox.textContent = consoleBuffer + err.message;
+        consoleBuffer = consoleBuffer + err.message
     } finally {
         runBtn.disabled = false;
+        outputBtn.disabled = false;
     }
+
+    return consoleBuffer
 }
 
 
-function checkSolution() {
-    if (!originalUnscrambledCode) return;
+async function runCode() {
+    if (!pyodide) return;
+    outputBox.textContent = "";
     revealBtn.textContent = "See answer"
+    outputBtn.textContent = "See expected output"
 
-    // 1. Extract and normalize the user's current configuration
     const currentUserCode = getCompiledCode();
-    const normalizedUser = normalizeCodeForComparison(currentUserCode);
-
-    // 2. Normalize the master script reference
-    const normalizedOriginal = normalizeCodeForComparison(originalUnscrambledCode);
-
-    // 3. Compare the semantic structure
-    if (normalizedUser === normalizedOriginal) {
-        outputBox.textContent = "🎉 Success! The lines are ordered correctly.";
+    const currentUserOutput = await getOutput(currentUserCode)
+    const correctOutput = await getOutput(originalUnscrambledCode);
+    if (currentUserOutput === correctOutput) {
+        outputBox.textContent = `🎉 Success! This code produces the correct output\n\n${currentUserOutput}`;
     } else {
-        outputBox.textContent = "❌ That doesn't match the order in the answer key. It might still be OK, but double check to be sure";
+        outputBox.textContent = `❌ This code does not produce the correct output\n\n${currentUserOutput}`;
     }
+}
+
+async function checkOutput() {
+    // Check if we are already displaying the expected output by inspecting the button text
+    if (outputBtn.textContent === "See expected output") {
+        expectedOutput = await getOutput(originalUnscrambledCode)
+        outputBox.textContent = `--- EXPECTED OUTPUT REFERENCE ---\n\n${expectedOutput}`
+        outputBtn.textContent = "Hide expected output"
+        revealBtn.textContent = "See answer"
+    } else {
+        // 2. Clear out the answer code block and return to normal status
+        outputBox.textContent = "Ready to run.";
+        outputBtn.textContent = "See expected output";
+    }
+
 }
 
 function revealSolution() {
@@ -273,6 +285,7 @@ function revealSolution() {
         // 1. Save any current output text if you want to prevent completely losing errors (optional)
         outputBox.textContent = `--- CORRECT SOLUTION REFERENCE ---\n\n${originalUnscrambledCode}`;
         revealBtn.textContent = "Hide answer";
+        outputBtn.textContent = "See expected output"
     } else {
         // 2. Clear out the answer code block and return to normal status
         outputBox.textContent = "Ready to run.";
