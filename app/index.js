@@ -209,20 +209,10 @@ function getCompiledCode() {
     return currentLines.join('\n');
 }
 
-function normalizeCodeForComparison(codeStr) {
-    return codeStr
-        .split('\n')
-        .map(line => line.trimEnd())             // Ignore accidental trailing spaces
-        .filter(line => line.trim() !== "")      // Completely ignore blank lines
-        .join('\n');
-}
-
 async function getOutput(codeText) {
 
     runBtn.disabled = true;
     outputBtn.disabled = true;
-
-
     let consoleBuffer = "";
 
     // Write pyodide output to consoleBuffer
@@ -277,7 +267,6 @@ async function checkOutput() {
 }
 
 function revealSolution() {
-
     if (!originalUnscrambledCode) return;
 
     // Check if we are already displaying the answer by inspecting the button text
