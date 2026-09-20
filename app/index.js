@@ -12,6 +12,7 @@ const AVAILABLE_SCRIPTS = [
 const DEFAULT_SCRIPT = 'pydantic_type_coercion'
 
 let pyodide;
+let pydodideDict;
 let currentFileName;
 let originalUnscrambledCode;
 const listContainer = document.getElementById('sortable-list');
@@ -75,6 +76,7 @@ async function initPyodide() {
         // Populate dropdown only after successful script processing
         statusDiv.textContent = "Problem loaded! Loading data...";
 
+        // Load data
         const resp = await fetch('data.zip');
         if (!resp.ok) {
             throw new Error(`Failed to load data.zip: ${resp.status}`);
@@ -95,6 +97,9 @@ async function initPyodide() {
 
         runBtn.disabled = false;
         outputBtn.disabled = false;
+
+        // Create a dict constructor for handling global Python variables when running code
+        pyodideDict = pyodide.globals.get("dict")
     } catch (err) {
         statusDiv.textContent = "Failed to load Python.";
         outputBox.textContent = `Initialization Error:\n${err.message || err}`;
@@ -222,13 +227,17 @@ async function getOutput(codeText) {
     pyodide.setStderr({
         batched: (text) => { consoleBuffer += text + "\n"; }
     });
+
+    // Use fresh global variables to prevent holdovers from previous runs
+    const freshGlobals = pyodideDict()
     try {
-        await pyodide.runPythonAsync(codeText)
+        await pyodide.runPythonAsync(codeText, { globals: freshGlobals })
     } catch (err) {
         consoleBuffer = consoleBuffer + err.message
     } finally {
         runBtn.disabled = false;
         outputBtn.disabled = false;
+        freshGlobals.destroy()
     }
 
     return consoleBuffer
