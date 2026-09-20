@@ -255,9 +255,9 @@ async function runCode() {
     const currentUserOutput = await getOutput(currentUserCode)
     const correctOutput = await getOutput(originalUnscrambledCode);
     if (currentUserOutput === correctOutput) {
-        outputBox.textContent = `🎉 Success! This code produces the correct output\n\n${currentUserOutput}`;
+        outputBox.textContent = `🎉 Success! This code produces the expected output\n\n${currentUserOutput}`;
     } else {
-        outputBox.textContent = `❌ This code does not produce the correct output\n\n${currentUserOutput}`;
+        outputBox.textContent = `❌ This code does not produce the expected output\n\n${currentUserOutput}`;
     }
 }
 
