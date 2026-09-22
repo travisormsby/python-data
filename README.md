@@ -5,9 +5,13 @@ The repository consists of two distinct parts:
 - A Jupyter notebook, data, and supporting configuration files to build a local Python environment for running the notebook.
 - The source code for a web app of [Parsons problems](https://en.wikipedia.org/wiki/Parsons_problem) related to the concepts discussed in the Jupyter notebook. A live version of the app built from this code is available at https://projects.travisormsby.com/python-data
 
-## Run notebook from Google Colab
+## Run notebook in Google Colab
 
-If you have a Google account, you can open the notebook in Colab by clicking on the "Open in Colab" button at the top of the notebook. You will need to run the setup cell to get the notebook set up to run correctly.
+If you have a Google account, you can open the notebook in Colab:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/travisormsby/python-data/blob/main/notebook/data_therapy.ipynb)
+
+You will need to run the setup cell to get the notebook set up to run correctly.
 
 ## Run notebook in a local environment
 
