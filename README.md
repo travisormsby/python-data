@@ -20,10 +20,11 @@ If you are logged in to a GitHub account, you can open the notebook in a GitHub 
 1. In this GitHub repository, click the **Code** dropdown, then click the **Codespaces** tab.
 1. Click **Create codespace on main**.
 1. If you are prompted to trust the authors of the files in this folder, click **Trust Folder & Continue**.
-1. In the terminal at the bottom of the screen, install `uv` by running this command: `curl -LsSf https://astral.sh/uv/install.sh | sh` (use ctrl+shift+v to paste into the terminal)
+1. When the terminal at the bottom of the screen is ready, install `uv` by running this command: `curl -LsSf https://astral.sh/uv/install.sh | sh` (use ctrl+shift+v to paste into the terminal)
 1. Change to the notebook directory by running this command: `cd notebook`
 1. Create the Python environment by running this command: `uv sync` (You will see a "Failed to hardlink files" warning, which is expected in the codespace environment)
 1. Install the graphviz library by running this command: `sudo apt update && sudo apt install graphviz -y`
+1. Open `data-therapy.ipynb`.
 1. In the upper right part of the interface, click **Select Kernel**, then click **Install/Enable suggested extensions Python + Jupyter**.
 1. After the extensions finish installing, if there is not a dropdown from the top prompting you to choose a kernel source, click **Select Kernel** again.
 1. In the **Select Kernel** dropdown, click **Python Environments**.
