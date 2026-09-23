@@ -6,6 +6,7 @@ frame = (
     pl.read_csv("data/mn_counties.csv")
     .group_by(pl.col("region"))
     .agg(regional_area)
+    .sort(pl.col("region"))
 )
 
 print(frame)
