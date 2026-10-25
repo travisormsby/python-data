@@ -41,7 +41,8 @@ If you don't have either a Google or GitHub account, you'll need to open the not
     1. Start the Jupyter notebook server: `uv run jupyter notebook`
 1. Open `data_therapy.ipynb`
 
-## Data credits:
+## Data attribution:
 
-- `mn_counties.csv` and parquet files derived from this file were sourced from data from [Wikipedia](https://en.wikipedia.org/wiki/List_of_counties_in_Minnesota).
-- `child_care.gpkg` was sourced from the [Minnesota Geospatial Commons](https://www.arcgis.com/home/item.html?id=2396668679a640788852c916fdae6045#overview), from data collected by the Minnesota Department of Human Services (DHS). The use of this data is conditioned on acceptance of the DHS terms and conditions outlined at https://licensinglookup.dhs.state.mn.us/Disclaimer.aspx.
+- Parquet and CSV files of Minnesota county data were derived from data from [Wikipedia](https://en.wikipedia.org/wiki/List_of_counties_in_Minnesota). The use of these datasets is governed by the [Creative Commons Attribute-ShareAlike 4.0 License](https://creativecommons.org/licenses/by-sa/4.0/).
+- `child_care.gpkg` was sourced from the [Minnesota Geospatial Commons](https://www.arcgis.com/home/item.html?id=2396668679a640788852c916fdae6045#overview), from data collected by the Minnesota Department of Human Services (DHS). The use of this dataset is conditioned on acceptance of the [DHS terms and conditions](https://licensinglookup.dhs.state.mn.us/Disclaimer.aspx).
+- `minnesota.geojson` was derived from data from the [Minnesota Geospatial Commons](https://gis.data.mn.gov/maps/cf5f11b563bb4491bb90b856dc6af594/about), which is based on data maintained by the MNDNR's Lands and Minerals Division. The use of this dataset is constrained by the [DNR GIS Data License Agreement](https://www.dnr.state.mn.us/sitetools/data_software_license.html).
